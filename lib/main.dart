@@ -1,75 +1,52 @@
 import 'package:flutter/material.dart';
-import 'pages/dashboard.dart';
+import 'package:flutter/foundation.dart';
+import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 
-void main() {
+import 'services/auth_service.dart';
+import 'screens/auth/login_screen.dart';
+import 'screens/home/main_screen.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialisation du moteur de base de données selon la plateforme
+  if (kIsWeb) {
+    databaseFactory = databaseFactoryFfiWeb;
+  } else if (defaultTargetPlatform == TargetPlatform.windows ||
+      defaultTargetPlatform == TargetPlatform.linux) {
+    sqfliteFfiInit();
+    databaseFactory = databaseFactoryFfi;
+  }
+
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(colorScheme: .fromSeed(seedColor: Colors.deepPurple)),
-      home: const MainPage(),
-    );
-  }
-}
-
-class MainPage extends StatefulWidget {
-  const MainPage({super.key});
-
-  @override
-  State<MainPage> createState() => _MainPageState();
-}
-
-class _MainPageState extends State<MainPage> {
-  // ── Index de la page active ──────────────────────────────────────────────
-  int _index = 0;
-
-  // ── Liste des pages ──────────────────────────────────────────────────────
-  final List<Widget> _pages = [
-    const DashboardPage(), // index 0
-    const Center(
-      child: Text('Page Citoyens', style: TextStyle(color: Colors.white)),
-    ), // index 1
-    const Center(
-      child: Text('Page Candidats', style: TextStyle(color: Colors.white)),
-    ), // index 2
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0D1B2A),
-
-      // ── Affiche la page active ───────────────────────────────────────────
-      body: _pages[_index],
-
-      // ── Navbar en bas ────────────────────────────────────────────────────
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _index,
-        onTap: (i) => setState(() => _index = i),
-        backgroundColor: const Color(0xFF111F2E),
-        selectedItemColor: const Color(0xFF4FC3F7),
-        unselectedItemColor: Colors.white30,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard_rounded),
-            label: 'Dashboard',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.people_alt_rounded),
-            label: 'Citoyens',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.how_to_vote_rounded),
-            label: 'Candidats',
-          ),
-        ],
+      title: 'Habit Tracker',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(useMaterial3: true, colorSchemeSeed: Colors.green),
+      // FutureBuilder utilise SharedPreferences (AuthService().isLoggedIn())
+      // C'est 100% stable au démarrage !
+      home: FutureBuilder<bool>(
+        future: AuthService().isLoggedIn(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
+          if (snapshot.data == true) {
+            return const MainScreen();
+          }
+          return const LoginScreen();
+        },
       ),
     );
   }
