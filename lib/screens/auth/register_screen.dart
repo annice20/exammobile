@@ -31,21 +31,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _loading = true);
-    try {
-      await _auth.register(_userCtrl.text.trim(), _passCtrl.text);
-      if (!mounted) return;
+
+    final success = await _auth.register(_userCtrl.text.trim(), _passCtrl.text);
+
+    if (!mounted) return;
+
+    if (success) {
+      print("Inscription réussie, redirection...");
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const LoginScreen()),
       );
-    } catch (e) {
-      setState(() {
-        _loading = false;
-        // Souvent l'erreur vient d'un pseudo déjà pris (UNIQUE constraint)
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Ce nom d'utilisateur existe déjà")),
-        );
-      });
+    } else {
+      print("Échec de l'inscription (pseudo déjà pris ou erreur)");
+      setState(() => _loading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Erreur : Ce nom d'utilisateur est déjà utilisé"),
+        ),
+      );
     }
   }
 

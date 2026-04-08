@@ -4,6 +4,7 @@ class Habit {
   final String category;
   final String? createdAt;
   int points;
+  final String? owner;
 
   Habit({
     this.id,
@@ -11,6 +12,7 @@ class Habit {
     required this.category,
     this.createdAt,
     this.points = 0,
+    this.owner,
   });
 
   Map<String, dynamic> toMap() => {
@@ -19,6 +21,7 @@ class Habit {
     "category": category,
     "createdAt": createdAt ?? DateTime.now().toIso8601String(),
     "points": points,
+    'owner': owner,
   };
 
   factory Habit.fromMap(Map<String, dynamic> map) => Habit(
@@ -27,6 +30,7 @@ class Habit {
     category: map["category"],
     createdAt: map["createdAt"],
     points: map["points"] ?? 0,
+    owner: map['owner'],
   );
 
   /// Export JSON

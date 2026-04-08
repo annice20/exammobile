@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
-import 'package:sqflite/sqflite.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
-
+import 'package:hive_flutter/hive_flutter.dart';
+import 'core/database/database_helper.dart';
 import 'services/auth_service.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/home/main_screen.dart';
@@ -11,14 +8,7 @@ import 'screens/home/main_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialisation du moteur de base de données selon la plateforme
-  if (kIsWeb) {
-    databaseFactory = databaseFactoryFfiWeb;
-  } else if (defaultTargetPlatform == TargetPlatform.windows ||
-      defaultTargetPlatform == TargetPlatform.linux) {
-    sqfliteFfiInit();
-    databaseFactory = databaseFactoryFfi;
-  }
+  await DB.instance.init();
 
   runApp(const MyApp());
 }
@@ -32,8 +22,6 @@ class MyApp extends StatelessWidget {
       title: 'Habit Tracker',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(useMaterial3: true, colorSchemeSeed: Colors.green),
-      // FutureBuilder utilise SharedPreferences (AuthService().isLoggedIn())
-      // C'est 100% stable au démarrage !
       home: FutureBuilder<bool>(
         future: AuthService().isLoggedIn(),
         builder: (context, snapshot) {

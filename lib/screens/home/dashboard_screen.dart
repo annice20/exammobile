@@ -160,13 +160,20 @@ class _DashboardState extends State<DashboardScreen> {
                       icon: _categoryIcon(_habits[i].category),
                       color: _categoryColor(_habits[i].category, cs),
                       onMarkDone: () async {
-                        final success = await _service.markDone(_habits[i].id!);
+                        final habitId = _habits[i].id;
+
+                        if (habitId == null) {
+                          print("Erreur : l'ID de l'habitude est introuvable");
+                          return;
+                        }
+
+                        final success = await _service.markDone(habitId);
                         if (!mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
                               success
-                                  ? "✅ +10 pts ! Bravo !"
+                                  ? "+10 pts ! Bravo !"
                                   : "Déjà complété aujourd'hui",
                             ),
                             behavior: SnackBarBehavior.floating,
@@ -240,6 +247,7 @@ class _HabitCard extends StatelessWidget {
         ),
         subtitle: Row(
           children: [
+            // Catégorie
             Chip(
               label: Text(habit.category, style: const TextStyle(fontSize: 11)),
               padding: EdgeInsets.zero,
@@ -248,11 +256,42 @@ class _HabitCard extends StatelessWidget {
               side: BorderSide.none,
             ),
             const SizedBox(width: 8),
+
+            // Points
             Icon(Icons.emoji_events, size: 14, color: Colors.amber),
             const SizedBox(width: 2),
             Text(
               "${habit.points} pts",
               style: TextStyle(fontSize: 12, color: cs.onSurfaceVariant),
+            ),
+
+            // --- Affichage de la Flamme (Streak) ---
+            const SizedBox(width: 12),
+            FutureBuilder<int>(
+              future: HabitService().getStreak(habit.id!),
+              builder: (context, snapshot) {
+                if (snapshot.hasData && snapshot.data! > 0) {
+                  return Row(
+                    children: [
+                      const Icon(
+                        Icons.local_fire_department,
+                        size: 16,
+                        color: Colors.orange,
+                      ),
+                      const SizedBox(width: 2),
+                      Text(
+                        "${snapshot.data}",
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.orange,
+                        ),
+                      ),
+                    ],
+                  );
+                }
+                return const SizedBox.shrink(); // Rien si le streak est à 0
+              },
             ),
           ],
         ),

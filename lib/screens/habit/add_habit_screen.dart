@@ -14,7 +14,6 @@ class _AddHabitScreenState extends State<AddHabitScreen> {
   final _service = HabitService();
   final _formKey = GlobalKey<FormState>();
 
-  // ✅ Catégories sélectionnables (plus de valeur hardcodée)
   static const _categories = [
     "Santé",
     "Sport",

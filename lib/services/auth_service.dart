@@ -4,41 +4,46 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../core/database/database_helper.dart';
 
 class AuthService {
-  final _dbInstance = DB.instance;
+  final _db = DB.instance;
 
   String _hash(String input) {
     return sha256.convert(utf8.encode(input)).toString();
   }
 
-  // INSCRIPTION
   Future<bool> register(String username, String password) async {
     try {
-      final db = await _dbInstance.database;
-      await db.insert('users', {
-        'username': username.trim(),
-        'password': _hash(password),
-      });
+      final box = _db.userBox;
+
+      // Vérification manuelle du doublon
+      final userExists = box.values.any(
+        (u) => u['username'] == username.trim(),
+      );
+
+      if (userExists) {
+        print("L'utilisateur existe déjà dans Hive");
+        return false;
+      }
+
+      await box.add({'username': username.trim(), 'password': _hash(password)});
+
+      print("INSCRIPTION VALIDÉE DANS HIVE !");
       return true;
     } catch (e) {
-      print("Erreur inscription: $e");
+      print("ERREUR LORS DE L'INSCRIPTION : $e");
       return false;
     }
   }
 
-  // CONNEXION
   Future<bool> login(String username, String password) async {
     try {
-      final db = await _dbInstance.database;
       final hashedPassword = _hash(password);
-
-      final List<Map<String, dynamic>> maps = await db.query(
-        'users',
-        where: 'username = ? AND password = ?',
-        whereArgs: [username.trim(), hashedPassword],
+      final user = _db.userBox.values.firstWhere(
+        (u) =>
+            u['username'] == username.trim() && u['password'] == hashedPassword,
+        orElse: () => null,
       );
 
-      if (maps.isNotEmpty) {
-        // ✅ Sauvegarde de la session hors de SQLite pour la stabilité
+      if (user != null) {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('isLoggedIn', true);
         await prefs.setString('username', username.trim());
@@ -46,7 +51,6 @@ class AuthService {
       }
       return false;
     } catch (e) {
-      print("Erreur login: $e");
       return false;
     }
   }
